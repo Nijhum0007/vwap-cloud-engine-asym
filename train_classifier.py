@@ -36,6 +36,7 @@ class VWAPDataset(Dataset):
         self.dist_vwap = df['dist_to_vwap'].values if 'dist_to_vwap' in df.columns else np.zeros_like(self.prices)
         self.vol_surge = df['volume_surge'].values if 'volume_surge' in df.columns else np.zeros_like(self.prices)
         self.momentum = df['momentum_5'].values if 'momentum_5' in df.columns else np.zeros_like(self.prices)
+        self.cvd = df['cvd_14'].values if 'cvd_14' in df.columns else np.zeros_like(self.prices)
         
         self.labels = self._generate_labels()
         
@@ -75,13 +76,15 @@ class VWAPDataset(Dataset):
         v_seq = self.dist_vwap[real_idx - self.seq_len : real_idx]
         vol_seq = self.vol_surge[real_idx - self.seq_len : real_idx]
         mom_seq = self.momentum[real_idx - self.seq_len : real_idx]
+        cvd_seq = self.cvd[real_idx - self.seq_len : real_idx]
         
         p_seq = (p_seq - np.mean(p_seq)) / (np.std(p_seq) + 1e-5)
         v_seq = (v_seq - np.mean(v_seq)) / (np.std(v_seq) + 1e-5)
         vol_seq = (vol_seq - np.mean(vol_seq)) / (np.std(vol_seq) + 1e-5)
         mom_seq = (mom_seq - np.mean(mom_seq)) / (np.std(mom_seq) + 1e-5)
+        cvd_seq = (cvd_seq - np.mean(cvd_seq)) / (np.std(cvd_seq) + 1e-5)
         
-        seq = np.column_stack((p_seq, v_seq, vol_seq, mom_seq))
+        seq = np.column_stack((p_seq, v_seq, vol_seq, mom_seq, cvd_seq))
         label = self.labels[real_idx]
         
         return torch.tensor(seq, dtype=torch.float32), torch.tensor(label, dtype=torch.long)
@@ -107,6 +110,7 @@ def evaluate_holdout(model, df_holdout, device, target_move=0.0015, threshold=0.
     dist_vwap = df_holdout['dist_to_vwap'].values
     vol_surge = df_holdout['volume_surge'].values
     momentum = df_holdout['momentum_5'].values
+    cvd = df_holdout['cvd_14'].values
     
     for i in tqdm(range(60, len(df_holdout))):
         if in_position:
@@ -146,13 +150,15 @@ def evaluate_holdout(model, df_holdout, device, target_move=0.0015, threshold=0.
             v_seq = dist_vwap[i - 60 : i]
             vol_seq = vol_surge[i - 60 : i]
             mom_seq = momentum[i - 60 : i]
+            cvd_seq = cvd[i - 60 : i]
             
             p_seq = (p_seq - np.mean(p_seq)) / (np.std(p_seq) + 1e-5)
             v_seq = (v_seq - np.mean(v_seq)) / (np.std(v_seq) + 1e-5)
             vol_seq = (vol_seq - np.mean(vol_seq)) / (np.std(vol_seq) + 1e-5)
             mom_seq = (mom_seq - np.mean(mom_seq)) / (np.std(mom_seq) + 1e-5)
+            cvd_seq = (cvd_seq - np.mean(cvd_seq)) / (np.std(cvd_seq) + 1e-5)
             
-            matrix = np.column_stack((p_seq, v_seq, vol_seq, mom_seq))
+            matrix = np.column_stack((p_seq, v_seq, vol_seq, mom_seq, cvd_seq))
             seq_tensor = torch.tensor(matrix, dtype=torch.float32).unsqueeze(0).to(device)
             
             with torch.no_grad():
@@ -215,7 +221,7 @@ def main():
         s1_bits=8, s2_bits=8, n_layers=4, d_model=128, n_heads=4, 
         ff_dim=512, ffn_dropout_p=0.1, attn_dropout_p=0.1, 
         resid_dropout_p=0.1, token_dropout_p=0.1, learn_te=False,
-        in_features=4
+        in_features=5
     ).to(device)
     
     criterion = nn.CrossEntropyLoss()

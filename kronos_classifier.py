@@ -25,7 +25,7 @@ class KronosSoftmaxEngine:
             s1_bits=8, s2_bits=8, n_layers=4, d_model=128, n_heads=4, 
             ff_dim=512, ffn_dropout_p=0.1, attn_dropout_p=0.1, 
             resid_dropout_p=0.1, token_dropout_p=0.1, learn_te=False,
-            in_features=4
+            in_features=5
         ).to(self.device)
         
         # 2. Load the trained weights!
@@ -61,6 +61,7 @@ class KronosSoftmaxEngine:
         dist_vwap = df['Dist_to_VWAP'].tail(60).values if 'Dist_to_VWAP' in df.columns else np.zeros_like(prices)
         vol_surge = df['Volume_Surge'].tail(60).values if 'Volume_Surge' in df.columns else np.zeros_like(prices)
         momentum = df['Momentum_5'].tail(60).values if 'Momentum_5' in df.columns else np.zeros_like(prices)
+        cvd_14 = df['CVD_14'].tail(60).values if 'CVD_14' in df.columns else np.zeros_like(prices)
         
         # 2. LOCAL Z-SCORE NORMALIZATION on ALL features (must match training exactly)
         # This ensures all features have comparable scale (~std=1) so the neural network
@@ -69,11 +70,12 @@ class KronosSoftmaxEngine:
         dist_vwap = (dist_vwap - np.mean(dist_vwap)) / (np.std(dist_vwap) + 1e-5)
         vol_surge = (vol_surge - np.mean(vol_surge)) / (np.std(vol_surge) + 1e-5)
         momentum = (momentum - np.mean(momentum)) / (np.std(momentum) + 1e-5)
+        cvd_14 = (cvd_14 - np.mean(cvd_14)) / (np.std(cvd_14) + 1e-5)
         
-        # 3. Stack into [60, 4] Matrix
-        matrix = np.column_stack((prices, dist_vwap, vol_surge, momentum))
+        # 3. Stack into [60, 5] Matrix
+        matrix = np.column_stack((prices, dist_vwap, vol_surge, momentum, cvd_14))
         
-        # 4. Convert to Tensor. Shape: [1, 60, 4]
+        # 4. Convert to Tensor. Shape: [1, 60, 5]
         seq_tensor = torch.tensor(matrix, dtype=torch.float32).unsqueeze(0).to(self.device)
         
         # 4. Neural Network Inference!
@@ -102,7 +104,8 @@ if __name__ == "__main__":
         'close': np.random.normal(85000, 50, 60),
         'Dist_to_VWAP': np.random.normal(0, 0.01, 60),
         'Volume_Surge': np.random.normal(1, 0.5, 60),
-        'Momentum_5': np.random.normal(0, 0.005, 60)
+        'Momentum_5': np.random.normal(0, 0.005, 60),
+        'CVD_14': np.random.normal(0, 100, 60)
     })
     
     probs = engine.predict(df)

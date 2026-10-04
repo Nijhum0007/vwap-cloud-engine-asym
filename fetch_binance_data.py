@@ -57,8 +57,8 @@ def fetch_binance_klines(symbol="BTCUSDT", interval="1m", limit=1000, start_str=
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     df.set_index('timestamp', inplace=True)
     
-    # Keep only what we need and convert to float
-    df = df[["Open", "High", "Low", "Close", "Volume"]].astype(float)
+    # Keep only what we need and convert to float (tb_base_av is Taker Buy Base Asset Volume)
+    df = df[["Open", "High", "Low", "Close", "Volume", "tb_base_av"]].astype(float)
     return df
 
 def calculate_vwap_features(df):
@@ -84,7 +84,13 @@ def calculate_vwap_features(df):
     df['Volume_MA_20'] = df['Volume'].rolling(window=20).mean()
     df['Volume_Surge'] = df['Volume'] / df['Volume_MA_20']
     
-    df = df.drop(columns=['Typical_Price', 'VP', 'Volume_MA_20'])
+    # 5. Cumulative Volume Delta (CVD)
+    # Taker Buy = Aggressive Longs. Taker Sell = Aggressive Shorts.
+    df['Taker_Sell_Volume'] = df['Volume'] - df['tb_base_av']
+    df['Net_Volume'] = df['tb_base_av'] - df['Taker_Sell_Volume']
+    df['CVD_14'] = df['Net_Volume'].rolling(window=14).sum()
+    
+    df = df.drop(columns=['Typical_Price', 'VP', 'Volume_MA_20', 'tb_base_av', 'Taker_Sell_Volume', 'Net_Volume'])
     df = df.dropna()
     return df
 
