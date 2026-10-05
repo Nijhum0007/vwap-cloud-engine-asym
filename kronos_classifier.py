@@ -18,7 +18,7 @@ class KronosSoftmaxEngine:
         """
         print("[*] Initializing REAL Kronos PyTorch Classification Engine...")
         self.target_move = target_move
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
         
         # 1. Initialize the Base PyTorch Architecture
         self.model = Kronos(

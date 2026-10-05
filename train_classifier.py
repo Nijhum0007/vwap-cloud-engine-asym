@@ -194,7 +194,7 @@ def evaluate_holdout(model, df_holdout, device, target_move=0.0015, threshold=0.
 
 # --- TRAINING LOOP ---
 def main():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
     print(f"[*] Training on device: {device}")
     
     print("[*] Loading historical data from btc_1m_qlib_ready.csv...")
