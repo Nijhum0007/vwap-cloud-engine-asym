@@ -1,0 +1,40 @@
+# Environments & OS
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# Data & Model Weights
+*.csv
+*.pth
+*.bin
+csv_data/
+validation_data/
+validation_reports/
+
+# Local Dashboard & State files
+paper_trader_state.json
+error.log
+*.log
+
+# Windows specific
+app.py
+server.py
+paper_trader.py
+live_data.py
+data_pipeline.py
+dump_bin.py
+main_execution.py
+evaluate_model.py
+validate_oos.py
+dashboard.html
+static/
+templates/
+kronos_adapter.py
+qlib_backtest_config.yaml
+AGENTS.md
+rentech.md
+trading_probability.md
