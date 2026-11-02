@@ -20,7 +20,7 @@ paper_trader_state.json
 error.log
 *.log
 
-# Windows specific
+# Windows specific & validation harnesses
 app.py
 server.py
 paper_trader.py
@@ -29,7 +29,8 @@ data_pipeline.py
 dump_bin.py
 main_execution.py
 evaluate_model.py
-validate_oos.py
+validate_*.py
+error_trace.txt
 dashboard.html
 static/
 templates/
